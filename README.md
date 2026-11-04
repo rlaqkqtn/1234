@@ -43,7 +43,7 @@
     <ul id="meal-list">
         <li style="color:#888; text-align:center;">불러오는 중...</li>
     </ul>
-    <button id="retry-btn" style="width:100%; margin-top:6px; font-size:10px; padding:4px;">급식 다시 투하</button>
+    <button id="retry-btn" style="width:100%; margin-top:6px; font-size:10px; padding:4px;">급식 다시 불러오기</button>
 </div>
 
 <div id="ui">
@@ -323,23 +323,21 @@
     })();
 
     // ==========================================
-    // 나이스(NEIS) 급식 API 연동 (CORS 우회 적용)
+    // 나이스(NEIS) 급식 API 순수 연동 파트
     // ==========================================
     const API_KEY = "7fa09fa2743e4c78844dfc42faef8a41";
     const OFFICE_CODE = "B10";   
     const SCHOOL_CODE = "7010117"; 
 
     async function loadNeisMeal() {
-        // YYYYMMDD 날짜 구하기
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         const today = `${year}${month}${day}`;
 
+        // 브라우저 CORS 차단을 피하면서 순수 API 키로 데이터를 찌르는 프록시 경로
         const neisTargetUrl = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&KEY=${API_KEY}&ATPT_OFCDC_SC_CODE=${OFFICE_CODE}&SD_SCHUL_CODE=${SCHOOL_CODE}&MLSV_YMD=${today}`;
-        
-        // CORS 우회 프록시 URL 감싸기
         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(neisTargetUrl)}`;
         const mealListEl = document.getElementById('meal-list');
 
@@ -363,21 +361,11 @@
                     setTimeout(() => dropFood(item.trim()), idx * 500);
                 });
             } else {
-                throw new Error("No data");
+                mealListEl.innerHTML = `<li style="color:#ff6b6b; text-align:center;">오늘 등록된 급식이 없습니다.</li>`;
             }
         } catch (e) {
-            console.error(e);
-            dropSampleMeal();
+            mealListEl.innerHTML = `<li style="color:#ff6b6b; text-align:center;">API 연동 오류 발생</li>`;
         }
-    }
-
-    function dropSampleMeal() {
-        const samples = ["제육볶음", "돈까스", "배추김치", "잔치국수", "초코케이크", "바나나우유"];
-        const mealListEl = document.getElementById('meal-list');
-        mealListEl.innerHTML = samples.map(item => `<li>• ${item}</li>`).join('');
-        samples.forEach((item, idx) => {
-            setTimeout(() => dropFood(item), idx * 500);
-        });
     }
 
     document.getElementById('retry-btn').onclick = loadNeisMeal;
